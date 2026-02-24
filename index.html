@@ -1,26 +1,24 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="zh-CN" style="scroll-behavior: smooth;">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>新年快乐 - 春节倒计时</title>
+    <title>算法可视化 - 终极修复版</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
+        * { box-sizing: border-box; }
         body {
-            font-family: 'Microsoft YaHei', 'PingFang SC', sans-serif;
-            background: linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%);
-            min-height: 100vh;
-            overflow: hidden;
-            position: relative;
+            font-family: 'Inter', sans-serif;
+            background: #0a0e27;
+            color: #e2e8f0;
+            overflow-x: hidden;
+            margin: 0;
         }
-
-        /* 星空背景 */
-        .stars {
+        .mono { font-family: 'JetBrains Mono', monospace; }
+        
+        /* 流星背景 */
+        .meteor-bg {
             position: fixed;
             top: 0;
             left: 0;
@@ -28,732 +26,1144 @@
             height: 100%;
             pointer-events: none;
             z-index: 0;
+            overflow: hidden;
         }
-
-        .star {
+        .meteor {
             position: absolute;
-            background: white;
-            border-radius: 50%;
-            animation: twinkle 3s infinite;
+            width: 100px;
+            height: 2px;
+            background: linear-gradient(to right, transparent, #38bdf8, transparent);
+            opacity: 0;
+            animation: meteor 3s linear infinite;
         }
-
-        @keyframes twinkle {
-            0%, 100% { opacity: 0.3; }
-            50% { opacity: 1; }
+        @keyframes meteor {
+            0% { transform: translateX(-100px) translateY(-100px) rotate(-45deg); opacity: 0; }
+            10% { opacity: 1; }
+            90% { opacity: 1; }
+            100% { transform: translateX(100vw) translateY(100vh) rotate(-45deg); opacity: 0; }
         }
-
-        /* 灯笼装饰 */
-        .lantern {
+        
+        .glass-card {
+            background: rgba(15, 23, 42, 0.85);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(56, 189, 248, 0.15);
+        }
+        
+        .code-line {
+            padding-left: 1rem;
+            border-left: 3px solid transparent;
+            transition: all 0.3s;
+        }
+        .code-line.active {
+            background: rgba(56, 189, 248, 0.15);
+            border-left-color: #38bdf8;
+            padding-left: 1.5rem;
+        }
+        
+        /* 接雨水 */
+        .rain-wrapper {
+            position: relative;
+            padding: 60px 40px 60px 40px;
+        }
+        .rain-container {
+            display: flex;
+            align-items: flex-end;
+            justify-content: center;
+            height: 300px;
+            gap: 8px;
+            position: relative;
+        }
+        .rain-col {
+            position: relative;
+            width: 36px;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            align-items: center;
+        }
+        .rain-bar {
+            width: 100%;
+            background: linear-gradient(to top, #475569, #64748b);
+            border-radius: 4px 4px 0 0;
+            position: relative;
+            z-index: 2;
+            display: flex;
+            align-items: flex-end;
+            justify-content: center;
+            padding-bottom: 4px;
+            font-size: 11px;
+            font-weight: bold;
+            color: rgba(255,255,255,0.9);
+            box-shadow: 0 -2px 8px rgba(0,0,0,0.3);
+            transition: all 0.3s;
+        }
+        .rain-water {
             position: absolute;
-            width: 80px;
-            height: 100px;
-            background: linear-gradient(180deg, #ff4757 0%, #c0392b 100%);
-            border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;
-            box-shadow: 0 0 30px rgba(255, 71, 87, 0.6), inset 0 -10px 20px rgba(0,0,0,0.2);
-            animation: swing 4s ease-in-out infinite;
+            left: 0;
+            width: 100%;
+            background: linear-gradient(to top, 
+                rgba(14, 165, 233, 0.9), 
+                rgba(56, 189, 248, 0.6),
+                rgba(186, 230, 253, 0.3)
+            );
+            border-radius: 4px 4px 0 0;
             z-index: 1;
+            transition: height 0.6s ease-out;
+            box-shadow: 0 0 20px rgba(56, 189, 248, 0.4);
         }
-
-        .lantern::before {
-            content: '';
+        
+        /* 指针 - 关键修复：使用实际像素定位 */
+        .pointer-container {
             position: absolute;
-            top: -15px;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 40px;
+            pointer-events: none;
+            padding: 0 40px; /* 与 rain-wrapper 一致 */
+        }
+        .pointer {
+            position: absolute;
+            top: 0;
+            width: 0;
+            height: 0;
+            border-left: 10px solid transparent;
+            border-right: 10px solid transparent;
+            border-top: 15px solid #fbbf24;
+            filter: drop-shadow(0 0 8px #fbbf24);
+            transition: left 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+            z-index: 10;
+            transform: translateX(-50%);
+        }
+        .pointer.right {
+            border-top-color: #f472b6;
+            filter: drop-shadow(0 0 8px #f472b6);
+        }
+        .pointer-label {
+            position: absolute;
+            top: -20px;
             left: 50%;
             transform: translateX(-50%);
-            width: 30px;
-            height: 15px;
-            background: #ffd700;
-            border-radius: 3px;
-        }
-
-        .lantern::after {
-            content: '福';
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            color: #ffd700;
-            font-size: 32px;
+            font-size: 12px;
             font-weight: bold;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+            font-family: 'JetBrains Mono', monospace;
         }
-
-        .lantern:nth-child(1) { left: 5%; top: 5%; animation-delay: 0s; }
-        .lantern:nth-child(2) { right: 5%; top: 8%; animation-delay: 0.5s; }
-        .lantern:nth-child(3) { left: 8%; top: 60%; animation-delay: 1s; }
-        .lantern:nth-child(4) { right: 8%; top: 65%; animation-delay: 1.5s; }
-
-        @keyframes swing {
-            0%, 100% { transform: rotate(-8deg); }
-            50% { transform: rotate(8deg); }
-        }
-
-        /* 主容器 */
-        .container {
-            position: relative;
-            z-index: 10;
+        
+        .rain-labels-container {
             display: flex;
-            flex-direction: column;
-            align-items: center;
             justify-content: center;
-            min-height: 100vh;
-            padding: 20px;
+            margin-top: 10px;
+            padding: 0 40px;
+            gap: 8px;
         }
-
-        /* 主标题 */
-        .main-title {
-            font-size: clamp(3rem, 12vw, 7rem);
-            background: linear-gradient(45deg, #ffd700, #ff6b6b, #ffd700, #ff4757);
-            background-size: 300% 300%;
+        
+        .gradient-text {
+            background: linear-gradient(135deg, #38bdf8 0%, #818cf8 50%, #c084fc 100%);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
-            background-clip: text;
-            animation: gradientShift 4s ease infinite;
-            text-shadow: 0 0 40px rgba(255, 215, 0, 0.3);
-            margin-bottom: 3rem;
-            letter-spacing: 0.3em;
-            font-weight: 900;
-            text-align: center;
         }
 
-        @keyframes gradientShift {
-            0% { background-position: 0% 50%; }
-            50% { background-position: 100% 50%; }
-            100% { background-position: 0% 50%; }
-        }
-
-        /* 点击区域 */
-        .click-area {
-            background: rgba(255, 255, 255, 0.05);
-            backdrop-filter: blur(20px);
-            border: 2px solid rgba(255, 215, 0, 0.4);
-            border-radius: 25px;
-            padding: 50px 80px;
+        /* 开始探索按钮 - 使用 a 标签确保跳转 */
+        .explore-btn {
+            display: inline-block;
+            padding: 16px 32px;
+            background: linear-gradient(135deg, #0891b2, #06b6d4);
+            color: white;
+            font-weight: 800;
+            font-size: 18px;
+            border: none;
+            border-radius: 9999px;
             cursor: pointer;
-            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4), 0 0 20px rgba(255, 215, 0, 0.1);
-            position: relative;
-            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(6, 182, 212, 0.3);
+            transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+            text-decoration: none;
+        }
+        .explore-btn:hover {
+            transform: scale(1.08);
+            box-shadow: 0 20px 50px rgba(6, 182, 212, 0.5);
+            background: linear-gradient(135deg, #06b6d4, #22d3ee);
+        }
+        .explore-btn:active {
+            transform: scale(0.92);
         }
 
-        .click-area::before {
-            content: '';
-            position: absolute;
-            top: -50%;
-            left: -50%;
-            width: 200%;
-            height: 200%;
-            background: linear-gradient(45deg, transparent, rgba(255, 215, 0, 0.1), transparent);
-            transform: rotate(45deg);
-            transition: all 0.6s;
-            opacity: 0;
+        .pipe-example-inline {
+            background: rgba(15, 23, 42, 0.95);
+            border: 1px solid rgba(56, 189, 248, 0.3);
+            border-radius: 12px;
+            padding: 16px;
+            font-size: 12px;
+            margin-top: 16px;
         }
-
-        .click-area:hover::before {
-            animation: shimmer 1.5s ease-in-out;
+        
+        .dp-cell {
+            transition: all 0.3s;
         }
-
-        @keyframes shimmer {
-            0% { transform: translateX(-100%) translateY(-100%) rotate(45deg); opacity: 0; }
-            50% { opacity: 1; }
-            100% { transform: translateX(100%) translateY(100%) rotate(45deg); opacity: 0; }
+        .dp-cell:hover {
+            transform: scale(1.1);
+            z-index: 10;
         }
-
-        .click-area:hover {
-            transform: translateY(-8px) scale(1.02);
-            box-shadow: 0 20px 60px rgba(255, 215, 0, 0.25);
-            border-color: rgba(255, 215, 0, 0.8);
-            background: rgba(255, 255, 255, 0.1);
+        .dp-cell.calculating {
+            animation: pulse 0.5s ease-in-out;
         }
-
-        .click-text {
-            color: #ffd700;
-            font-size: 1.8rem;
-            text-align: center;
-            letter-spacing: 0.2em;
-            font-weight: 600;
-            margin-bottom: 10px;
-        }
-
-        .click-hint {
-            color: rgba(255, 255, 255, 0.5);
-            font-size: 1rem;
-            text-align: center;
-            letter-spacing: 0.1em;
-        }
-
-        /* 倒计时面板 */
-        .countdown-panel {
-            display: none;
-            background: rgba(0, 0, 0, 0.5);
-            backdrop-filter: blur(20px);
-            border-radius: 30px;
-            padding: 50px;
-            border: 1px solid rgba(255, 215, 0, 0.3);
-            box-shadow: 0 0 80px rgba(255, 71, 87, 0.4), inset 0 0 20px rgba(255, 215, 0, 0.05);
-            animation: fadeInUp 0.6s ease;
-            max-width: 90vw;
-        }
-
-        .countdown-panel.active {
-            display: block;
-        }
-
-        @keyframes fadeInUp {
-            from { opacity: 0; transform: translateY(30px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        .countdown-title {
-            color: #ffd700;
-            font-size: 2rem;
-            text-align: center;
-            margin-bottom: 40px;
-            letter-spacing: 0.2em;
-            text-shadow: 0 0 20px rgba(255, 215, 0, 0.5);
-        }
-
-        .countdown-grid {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 25px;
-            text-align: center;
-        }
-
-        .time-unit {
-            background: linear-gradient(135deg, rgba(255, 71, 87, 0.2), rgba(255, 215, 0, 0.1));
-            border-radius: 20px;
-            padding: 25px 20px;
-            border: 1px solid rgba(255, 215, 0, 0.4);
-            position: relative;
-            overflow: hidden;
-            min-width: 100px;
-        }
-
-        .time-unit::after {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: -100%;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
-            animation: shine 3s infinite;
-        }
-
-        @keyframes shine {
-            0% { left: -100%; }
-            20% { left: 100%; }
-            100% { left: 100%; }
-        }
-
-        .time-number {
-            font-size: 3.5rem;
-            font-weight: bold;
-            color: #fff;
-            display: block;
-            line-height: 1;
-            text-shadow: 0 0 20px rgba(255, 215, 0, 0.6);
-            font-family: 'Courier New', monospace;
-        }
-
-        .time-label {
-            color: rgba(255, 255, 255, 0.8);
-            font-size: 1rem;
-            margin-top: 12px;
-            display: block;
-            letter-spacing: 0.1em;
-        }
-
-        /* 烟花画布 */
-        #fireworksCanvas {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            pointer-events: none;
-            z-index: 50;
-        }
-
-        /* 新年快乐最终画面 */
-        .final-greeting {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.85);
-            display: none;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            z-index: 100;
-            opacity: 0;
-            transition: opacity 1s ease;
-        }
-
-        .final-greeting.show {
-            display: flex;
-            opacity: 1;
-        }
-
-        .greeting-text {
-            font-size: clamp(4rem, 15vw, 10rem);
-            background: linear-gradient(45deg, #ffd700, #ff6b6b, #ffd700, #ff4757, #ffd700);
-            background-size: 400% 400%;
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            animation: gradientFlow 3s ease infinite, bounce 2s ease infinite;
-            text-align: center;
-            font-weight: 900;
-            letter-spacing: 0.2em;
-            filter: drop-shadow(0 0 30px rgba(255, 215, 0, 0.5));
-            margin-bottom: 2rem;
-        }
-
-        @keyframes gradientFlow {
-            0% { background-position: 0% 50%; }
-            50% { background-position: 100% 50%; }
-            100% { background-position: 0% 50%; }
-        }
-
-        @keyframes bounce {
-            0%, 100% { transform: translateY(0) scale(1); }
-            50% { transform: translateY(-20px) scale(1.05); }
-        }
-
-        .greeting-sub {
-            font-size: clamp(1.5rem, 4vw, 3rem);
-            color: #fff;
-            text-align: center;
-            letter-spacing: 0.3em;
-            opacity: 0.9;
-            text-shadow: 0 0 20px rgba(255, 255, 255, 0.5);
-            animation: fadeInUp 1s ease 0.5s both;
-        }
-
-        .greeting-year {
-            font-size: clamp(2rem, 5vw, 4rem);
-            color: #ffd700;
-            margin-top: 2rem;
-            letter-spacing: 0.2em;
-            text-shadow: 0 0 30px rgba(255, 215, 0, 0.6);
-            animation: pulse 2s ease infinite;
-        }
-
         @keyframes pulse {
-            0%, 100% { opacity: 0.8; transform: scale(1); }
-            50% { opacity: 1; transform: scale(1.1); }
-        }
-
-        /* 粒子效果 */
-        .particle {
-            position: absolute;
-            pointer-events: none;
-            border-radius: 50%;
-            animation: particleFloat 2s ease-out forwards;
-        }
-
-        @keyframes particleFloat {
-            0% { transform: translate(0, 0) scale(1); opacity: 1; }
-            100% { transform: translate(var(--tx), var(--ty)) scale(0); opacity: 0; }
-        }
-
-        /* 响应式 */
-        @media (max-width: 768px) {
-            .countdown-grid {
-                grid-template-columns: repeat(2, 1fr);
-                gap: 15px;
-            }
-            .time-number {
-                font-size: 2.5rem;
-            }
-            .click-area {
-                padding: 35px 45px;
-            }
-            .countdown-panel {
-                padding: 30px 20px;
-            }
-        }
-
-        /* 隐藏状态 */
-        .hidden {
-            display: none !important;
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); box-shadow: 0 0 20px rgba(168, 85, 247, 0.5); }
         }
     </style>
 </head>
 <body>
-    <!-- 星空背景 -->
-    <div class="stars" id="stars"></div>
 
-    <!-- 灯笼装饰 -->
-    <div class="lantern"></div>
-    <div class="lantern"></div>
-    <div class="lantern"></div>
-    <div class="lantern"></div>
+    <!-- 流星背景 -->
+    <div class="meteor-bg" id="meteor-container"></div>
 
-    <!-- 烟花画布 -->
-    <canvas id="fireworksCanvas"></canvas>
+    <!-- 导航 -->
+    <div class="fixed right-6 top-1/2 transform -translate-y-1/2 z-50 space-y-3">
+        <div class="w-3 h-3 rounded-full bg-cyan-500 cursor-pointer" onclick="scrollTo('hero')"></div>
+        <div class="w-3 h-3 rounded-full bg-slate-600 cursor-pointer hover:bg-cyan-500 transition" onclick="scrollTo('binary')"></div>
+        <div class="w-3 h-3 rounded-full bg-slate-600 cursor-pointer hover:bg-cyan-500 transition" onclick="scrollTo('dp')"></div>
+        <div class="w-3 h-3 rounded-full bg-slate-600 cursor-pointer hover:bg-cyan-500 transition" onclick="scrollTo('prefix')"></div>
+        <div class="w-3 h-3 rounded-full bg-slate-600 cursor-pointer hover:bg-cyan-500 transition" onclick="scrollTo('math')"></div>
+        <div class="w-3 h-3 rounded-full bg-slate-600 cursor-pointer hover:bg-cyan-500 transition" onclick="scrollTo('graph')"></div>
+        <div class="w-3 h-3 rounded-full bg-slate-600 cursor-pointer hover:bg-cyan-500 transition" onclick="scrollTo('rain')"></div>
+    </div>
 
-    <!-- 主内容 -->
-    <div class="container" id="mainContainer">
-        <h1 class="main-title">恭贺新禧</h1>
-        
-        <div class="click-area" id="clickArea">
-            <div class="click-text">✨ 开启倒计时 ✨</div>
-            <div class="click-hint">点击查看距离大年初一还有多久</div>
+    <!-- Hero -->
+    <section id="hero" class="min-h-screen flex items-center justify-center relative z-10 px-6">
+        <div class="text-center max-w-4xl">
+            <h1 class="text-6xl md:text-8xl font-black mb-6">
+                <span class="block text-white">算法可视化</span>
+                <span class="block gradient-text mt-2">终极修复版</span>
+            </h1>
+            <p class="text-xl text-slate-400 mb-12">
+                柱子和索引对齐 · 水在柱子上 · 前缀和正确 · 流星背景
+            </p>
+            <!-- 关键修复：使用 a 标签确保跳转 -->
+            <a href="#binary" class="explore-btn">
+                开始探索
+            </a>
         </div>
+    </section>
 
-        <div class="countdown-panel" id="countdownPanel">
-            <div class="countdown-title">🧨 距离大年初一还有 🧨</div>
-            <div class="countdown-grid">
-                <div class="time-unit">
-                    <span class="time-number" id="days">00</span>
-                    <span class="time-label">天</span>
+    <!-- 1. 二分+贪心 - 管道问题 -->
+    <section id="binary" class="min-h-screen py-20 px-6 bg-slate-900/30 relative z-10">
+        <div class="max-w-6xl mx-auto">
+            <div class="mb-12">
+                <div class="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-blue-500/10 border border-blue-500/30 text-blue-400 text-xs mono mb-4">
+                    <span>01</span>
+                    <span>BINARY SEARCH + GREEDY</span>
                 </div>
-                <div class="time-unit">
-                    <span class="time-number" id="hours">00</span>
-                    <span class="time-label">时</span>
+                <h2 class="text-4xl font-bold mb-4">二分查找 + 贪心：管道问题</h2>
+            </div>
+
+            <div class="grid lg:grid-cols-2 gap-8">
+                <div class="space-y-6">
+                    <div class="glass-card rounded-2xl p-6 space-y-4">
+                        <h3 class="text-blue-400 font-bold">输入数据</h3>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="text-xs text-slate-500">阀门数 n</label>
+                                <input type="number" id="pipe-n" value="3" class="w-full mt-1 px-3 py-2 bg-slate-800 rounded border border-slate-600 mono">
+                            </div>
+                            <div>
+                                <label class="text-xs text-slate-500">管道长度 len</label>
+                                <input type="number" id="pipe-len" value="10" class="w-full mt-1 px-3 py-2 bg-slate-800 rounded border border-slate-600 mono">
+                            </div>
+                        </div>
+                        <div>
+                            <label class="text-xs text-slate-500">阀门数据 (L,S 每行一个)</label>
+                            <textarea id="pipe-data" rows="4" class="w-full mt-1 px-3 py-2 bg-slate-800 rounded border border-slate-600 mono text-sm">1 1
+5 5
+10 2</textarea>
+                        </div>
+                        <div class="flex space-x-2">
+                            <button onclick="runPipe()" class="flex-1 py-3 bg-blue-600 hover:bg-blue-500 rounded-lg font-bold">运行算法</button>
+                            <button onclick="loadPipeExample()" class="px-4 py-3 bg-slate-700 hover:bg-slate-600 rounded-lg text-sm">加载示例</button>
+                        </div>
+                        
+                        <div class="pipe-example-inline">
+                            <div class="flex items-center space-x-2 mb-3">
+                                <div class="w-2 h-2 rounded-full bg-blue-400"></div>
+                                <span class="font-bold text-blue-400">管道问题示例说明</span>
+                            </div>
+                            <div class="mono text-xs space-y-2 text-slate-300">
+                                <div class="text-slate-500 mb-1">输入：n=3, len=10</div>
+                                <div class="text-slate-500">阀门数据 (L,S)：</div>
+                                <div>• 阀门1: L=1, S=1</div>
+                                <div>• 阀门2: L=5, S=5</div>
+                                <div>• 阀门3: L=10, S=2</div>
+                                <div class="text-slate-500 mt-2">时间t后，阀门i覆盖 [L-S*t, L+S*t]</div>
+                                <div class="text-blue-400 mt-2 font-bold">答案 = 6</div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-                <div class="time-unit">
-                    <span class="time-number" id="minutes">00</span>
-                    <span class="time-label">分</span>
-                </div>
-                <div class="time-unit">
-                    <span class="time-number" id="seconds">00</span>
-                    <span class="time-label">秒</span>
+                <div class="glass-card rounded-2xl p-6">
+                    <div id="pipe-result" class="text-center py-12">
+                        <div class="text-slate-500 mb-4">点击"运行算法"查看结果</div>
+                        <div class="text-6xl font-bold text-blue-400 mono opacity-0 transition-opacity" id="pipe-ans">?</div>
+                    </div>
+                    <div id="pipe-viz" class="mt-6 hidden">
+                        <div class="text-sm text-slate-400 mb-2">管道覆盖可视化</div>
+                        <div class="relative h-16 bg-slate-800 rounded-lg overflow-hidden">
+                            <div id="pipe-line" class="absolute top-1/2 left-0 right-0 h-1 bg-slate-600 transform -translate-y-1/2"></div>
+                            <div id="pipe-valves" class="absolute inset-0"></div>
+                        </div>
+                        <div class="flex justify-between text-xs text-slate-500 mt-1 mono">
+                            <span>0</span>
+                            <span id="pipe-len-display">10</span>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
-    </div>
+    </section>
 
-    <!-- 最终祝福语 -->
-    <div class="final-greeting" id="finalGreeting">
-        <div class="greeting-text">新年快乐</div>
-        <div class="greeting-sub">万事如意 · 阖家幸福</div>
-        <div class="greeting-year" id="yearDisplay">2026</div>
-    </div>
+    <!-- 2. 动态规划 -->
+    <section id="dp" class="min-h-screen py-20 px-6 relative z-10">
+        <div class="max-w-6xl mx-auto">
+            <div class="mb-12">
+                <div class="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-purple-500/10 border border-purple-500/30 text-purple-400 text-xs mono mb-4">
+                    <span>02</span>
+                    <span>DYNAMIC PROGRAMMING</span>
+                </div>
+                <h2 class="text-4xl font-bold mb-4">动态规划 - LCS过程演示</h2>
+            </div>
+            <div class="grid lg:grid-cols-3 gap-8">
+                <div class="space-y-4">
+                    <div class="glass-card rounded-2xl p-6">
+                        <div class="mb-3">
+                            <label class="text-xs text-slate-500">序列 A</label>
+                            <input type="text" id="dp-a" value="2,3,2,1,4,5" class="w-full mt-1 px-3 py-2 bg-slate-800 rounded border border-slate-600 mono">
+                        </div>
+                        <div class="mb-4">
+                            <label class="text-xs text-slate-500">序列 B</label>
+                            <input type="text" id="dp-b" value="1,2,3,4,5" class="w-full mt-1 px-3 py-2 bg-slate-800 rounded border border-slate-600 mono">
+                        </div>
+                        <button onclick="runDP()" class="w-full py-3 bg-purple-600 hover:bg-purple-500 rounded-lg font-bold">开始计算</button>
+                        <button onclick="resetDP()" class="w-full mt-2 py-2 border border-slate-600 hover:border-purple-500 rounded-lg text-sm">重置</button>
+                    </div>
+                    <div class="glass-card rounded-2xl p-4 mono text-xs space-y-1">
+                        <div class="text-slate-500 mb-2">状态转移方程：</div>
+                        <div class="code-line">if a[i-1] == b[j-1]:</div>
+                        <div class="code-line pl-4 text-green-400">dp[i][j] = dp[i-1][j-1] + 1</div>
+                        <div class="code-line">else:</div>
+                        <div class="code-line pl-4 text-purple-400">dp[i][j] = max(dp[i-1][j], dp[i][j-1])</div>
+                    </div>
+                    <div id="dp-status" class="text-sm text-purple-400 mono"></div>
+                </div>
+                <div class="lg:col-span-2 glass-card rounded-2xl p-6 overflow-x-auto">
+                    <div id="dp-table"></div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 3. 预处理前缀和 -->
+    <section id="prefix" class="min-h-screen py-20 px-6 bg-slate-900/30 relative z-10">
+        <div class="max-w-5xl mx-auto">
+            <div class="mb-12">
+                <div class="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs mono mb-4">
+                    <span>03</span>
+                    <span>PREFIX SUM</span>
+                </div>
+                <h2 class="text-4xl font-bold mb-4">预处理前缀和</h2>
+                <p class="text-slate-400">正确定义：sum[l,r] = s[r] - s[l-1] （l>0时）</p>
+            </div>
+
+            <div class="glass-card rounded-2xl p-8 space-y-6">
+                <div>
+                    <div class="flex justify-between items-center mb-3">
+                        <span class="text-sm font-bold text-slate-400">输入数组 (逗号分隔)</span>
+                        <button onclick="updatePrefixData()" class="text-xs px-3 py-1 bg-emerald-600/20 text-emerald-400 rounded">更新</button>
+                    </div>
+                    <input type="text" id="prefix-input" value="5,3,4,6,5" class="w-full px-4 py-3 bg-slate-800 rounded-lg border border-slate-600 mono text-lg">
+                </div>
+
+                <div>
+                    <div class="text-sm font-bold text-slate-400 mb-2">原数组 a[] <span class="text-xs font-normal">索引: 0,1,2,3,4</span></div>
+                    <div class="flex items-end space-x-3 h-24" id="prefix-orig"></div>
+                </div>
+
+                <div>
+                    <div class="text-sm font-bold text-emerald-400 mb-2">前缀和 s[] <span class="text-xs font-normal">s[i]=sum(a[0..i])</span></div>
+                    <div class="flex items-end space-x-3 h-28" id="prefix-sum"></div>
+                </div>
+
+                <div class="border-t border-slate-700 pt-6">
+                    <div class="grid grid-cols-3 gap-4 mb-6">
+                        <div>
+                            <label class="text-xs text-slate-500">l (0-based)</label>
+                            <input type="number" id="pre-l" value="2" min="0" class="w-full mt-1 px-4 py-2 bg-slate-800 rounded border border-slate-600 mono text-center" onchange="validatePrefix()">
+                        </div>
+                        <div>
+                            <label class="text-xs text-slate-500">r (0-based)</label>
+                            <input type="number" id="pre-r" value="4" min="0" class="w-full mt-1 px-4 py-2 bg-slate-800 rounded border border-slate-600 mono text-center" onchange="validatePrefix()">
+                        </div>
+                        <div class="flex items-end">
+                            <button onclick="calcPrefix()" class="w-full py-2 bg-emerald-600 hover:bg-emerald-500 rounded-lg font-bold">计算</button>
+                        </div>
+                    </div>
+
+                    <div id="prefix-calc-box" class="bg-slate-800/50 rounded-xl p-6 mono text-lg opacity-50">
+                        <div id="prefix-formula" class="flex flex-wrap items-center gap-2 mb-3">
+                            <span class="text-slate-400">sum[</span>
+                            <span id="disp-l" class="text-emerald-400 font-bold">2</span>
+                            <span class="text-slate-400">,</span>
+                            <span id="disp-r" class="text-emerald-400 font-bold">4</span>
+                            <span class="text-slate-400">]</span>
+                            <span>=</span>
+                            <span id="formula-detail">
+                                <span class="text-amber-400">s[<span id="disp-sr">4</span>]</span>
+                                <span>-</span>
+                                <span class="text-pink-400">s[<span id="disp-sl">1</span>]</span>
+                            </span>
+                            <span>=</span>
+                            <span id="pre-ans" class="text-3xl font-bold text-white">?</span>
+                        </div>
+                        <div class="text-sm text-slate-500" id="pre-detail"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 4. 数论 -->
+    <section id="math" class="min-h-screen py-20 px-6 relative z-10">
+        <div class="max-w-6xl mx-auto">
+            <div class="mb-12">
+                <div class="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-orange-500/10 border border-orange-500/30 text-orange-400 text-xs mono mb-4">
+                    <span>04</span>
+                    <span>NUMBER THEORY</span>
+                </div>
+                <h2 class="text-4xl font-bold mb-4">质数、约数、GCD、逆元</h2>
+            </div>
+            <div class="grid md:grid-cols-4 gap-6">
+                <div class="glass-card rounded-2xl p-6">
+                    <h3 class="text-orange-400 font-bold mb-3">快速幂</h3>
+                    <input type="number" id="pow-a" value="2" class="w-full mb-2 px-3 py-2 bg-slate-800 rounded border border-slate-600 mono text-sm">
+                    <input type="number" id="pow-n" value="13" class="w-full mb-3 px-3 py-2 bg-slate-800 rounded border border-slate-600 mono text-sm">
+                    <button onclick="runPower()" class="w-full py-2 bg-orange-600 hover:bg-orange-500 rounded font-bold text-sm">计算</button>
+                    <div class="text-center text-2xl font-bold text-orange-400 mono mt-3" id="pow-res">8192</div>
+                </div>
+                <div class="glass-card rounded-2xl p-6">
+                    <h3 class="text-orange-400 font-bold mb-3">逆元</h3>
+                    <input type="number" id="inv-a" value="3" class="w-full mb-2 px-3 py-2 bg-slate-800 rounded border border-slate-600 mono text-sm">
+                    <input type="number" id="inv-m" value="11" class="w-full mb-3 px-3 py-2 bg-slate-800 rounded border border-slate-600 mono text-sm">
+                    <button onclick="runInverse()" class="w-full py-2 bg-orange-600 hover:bg-orange-500 rounded font-bold text-sm">计算</button>
+                    <div class="text-center text-2xl font-bold text-orange-400 mono mt-3" id="inv-res">4</div>
+                </div>
+                <div class="glass-card rounded-2xl p-6">
+                    <h3 class="text-orange-400 font-bold mb-3">欧拉函数</h3>
+                    <input type="number" id="euler-n" value="15" class="w-full mb-3 px-3 py-2 bg-slate-800 rounded border border-slate-600 mono text-sm">
+                    <button onclick="runEuler()" class="w-full py-2 bg-orange-600 hover:bg-orange-500 rounded font-bold text-sm">计算</button>
+                    <div class="text-center text-2xl font-bold text-orange-400 mono mt-3" id="euler-res">8</div>
+                </div>
+                <div class="glass-card rounded-2xl p-6">
+                    <h3 class="text-orange-400 font-bold mb-3">GCD</h3>
+                    <input type="number" id="gcd-a" value="48" class="w-full mb-2 px-3 py-2 bg-slate-800 rounded border border-slate-600 mono text-sm">
+                    <input type="number" id="gcd-b" value="18" class="w-full mb-3 px-3 py-2 bg-slate-800 rounded border border-slate-600 mono text-sm">
+                    <button onclick="runGCD()" class="w-full py-2 bg-orange-600 hover:bg-orange-500 rounded font-bold text-sm">计算</button>
+                    <div class="text-center text-2xl font-bold text-orange-400 mono mt-3" id="gcd-res">6</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 5. 图论 -->
+    <section id="graph" class="min-h-screen py-20 px-6 bg-slate-900/30 relative z-10">
+        <div class="max-w-6xl mx-auto">
+            <div class="mb-12">
+                <div class="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-indigo-500/10 border border-indigo-500/30 text-indigo-400 text-xs mono mb-4">
+                    <span>05</span>
+                    <span>GRAPH THEORY</span>
+                </div>
+                <h2 class="text-4xl font-bold mb-4">DFS and BFS - 环检测</h2>
+            </div>
+            <div class="grid lg:grid-cols-3 gap-8">
+                <div class="space-y-4">
+                    <div class="glass-card rounded-2xl p-6">
+                        <div class="mb-3">
+                            <label class="text-xs text-slate-500">节点数 n</label>
+                            <input type="number" id="graph-n" value="7" class="w-full mt-1 px-3 py-2 bg-slate-800 rounded border border-slate-600 mono">
+                        </div>
+                        <div class="mb-4">
+                            <label class="text-xs text-slate-500">边 (u v)</label>
+                            <textarea id="graph-edges" rows="5" class="w-full mt-1 px-3 py-2 bg-slate-800 rounded border border-slate-600 mono text-sm">1 2
+2 3
+3 4
+4 5
+5 6
+6 2
+4 7</textarea>
+                        </div>
+                        <div class="flex space-x-2">
+                            <button onclick="runGraph()" class="flex-1 py-2 bg-indigo-600 hover:bg-indigo-500 rounded-lg font-bold text-sm">剥叶子</button>
+                            <button onclick="resetGraph()" class="px-4 py-2 border border-slate-600 hover:border-indigo-500 rounded-lg text-sm">重置</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="lg:col-span-2 glass-card rounded-2xl p-4 relative min-h-[400px]">
+                    <canvas id="graphCanvas" class="w-full h-full"></canvas>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 6. 双指针接雨水问题 - 已删除左右最大值，只保留总积水量，添加 LintCode 363 链接 -->
+    <section id="rain" class="min-h-screen py-20 px-6 relative z-10">
+        <div class="max-w-6xl mx-auto">
+            <div class="mb-12 text-center">
+                <div class="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-sky-500/10 border border-sky-500/30 text-sky-400 text-xs mono mb-4">
+                    <span>06</span>
+                    <span>TWO POINTERS</span>
+                </div>
+                <h2 class="text-4xl font-bold mb-4">双指针接雨水问题</h2>
+                <p class="text-slate-400">指针和柱子对齐 · 水在柱子之上</p>
+                <a href="https://www.lintcode.com/problem/363/" target="_blank" class="inline-flex items-center space-x-2 mt-4 text-sky-400 hover:text-sky-300 transition">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
+                    <span class="mono">LintCode 363 · Trapping Rain Water</span>
+                </a>
+            </div>
+
+            <div class="grid lg:grid-cols-3 gap-8">
+                <div class="space-y-6">
+                    <div class="glass-card rounded-2xl p-6">
+                        <h3 class="text-sky-400 font-bold mb-3">输入数据</h3>
+                        <div class="mb-4">
+                            <label class="text-xs text-slate-500">柱子高度 (逗号分隔)</label>
+                            <input type="text" id="rain-input" value="0,1,0,2,1,0,1,3,2,1,2,1" class="w-full mt-1 px-3 py-2 bg-slate-800 rounded border border-slate-600 mono text-sm">
+                        </div>
+                        <button onclick="updateRainData()" class="w-full mb-2 py-2 bg-slate-700 hover:bg-slate-600 rounded-lg text-sm">更新数据</button>
+                        <button onclick="runRain()" id="rain-btn" class="w-full py-3 bg-sky-600 hover:bg-sky-500 rounded-lg font-bold shadow-lg shadow-sky-500/25">
+                            开始模拟
+                        </button>
+                    </div>
+
+                    <div class="glass-card rounded-2xl p-6 mono text-sm space-y-2">
+                        <div class="text-slate-500 mb-2">CORE LOGIC</div>
+                        <div id="rc1" class="code-line">while l < r:</div>
+                        <div id="rc2" class="code-line pl-4 text-sky-400 font-bold">if heights[l] < heights[r]:</div>
+                        <div id="rc3" class="code-line pl-8">if heights[l] >= lmax:</div>
+                        <div id="rc4" class="code-line pl-12">lmax = heights[l]</div>
+                        <div id="rc5" class="code-line pl-8">else:</div>
+                        <div id="rc6" class="code-line pl-12 text-sky-300">res += lmax - heights[l]</div>
+                        <div id="rc7" class="code-line pl-12">l += 1</div>
+                        <div id="rc8" class="code-line pl-4">else:</div>
+                        <div id="rc9" class="code-line pl-8 text-slate-500"># 对称处理右侧</div>
+                    </div>
+
+                    <!-- 只保留总积水量 -->
+                    <div class="glass-card rounded-2xl p-6 text-center">
+                        <div class="text-slate-400 text-sm mb-2">总积水量</div>
+                        <div id="rain-total" class="text-6xl font-bold text-sky-400 mono">0</div>
+                    </div>
+                </div>
+
+                <div class="lg:col-span-2 glass-card rounded-2xl p-8">
+                    <div class="rain-wrapper" id="rain-wrapper">
+                        <!-- 指针 -->
+                        <div class="pointer-container" id="pointer-container">
+                            <div id="ptr-l" class="pointer" style="left: 58px">
+                                <div class="pointer-label text-amber-400">L</div>
+                            </div>
+                            <div id="ptr-r" class="pointer right" style="left: 58px">
+                                <div class="pointer-label text-pink-400">R</div>
+                            </div>
+                        </div>
+
+                        <!-- 柱状图 -->
+                        <div class="rain-container" id="rain-viz"></div>
+
+                        <!-- X轴标签 -->
+                        <div class="rain-labels-container" id="rain-labels"></div>
+                    </div>
+
+                    <div class="flex justify-center space-x-6 mt-6 text-sm">
+                        <div class="flex items-center space-x-2">
+                            <div class="w-4 h-4 bg-slate-500 rounded"></div>
+                            <span class="text-slate-400">柱子</span>
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            <div class="w-4 h-4 bg-sky-400 rounded shadow-lg shadow-sky-400/50"></div>
+                            <span class="text-sky-400">水(在柱子上)</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
 
     <script>
-        // 初始化星空
-        function createStars() {
-            const starsContainer = document.getElementById('stars');
-            for (let i = 0; i < 100; i++) {
-                const star = document.createElement('div');
-                star.className = 'star';
-                star.style.left = Math.random() * 100 + '%';
-                star.style.top = Math.random() * 100 + '%';
-                star.style.width = Math.random() * 3 + 'px';
-                star.style.height = star.style.width;
-                star.style.animationDelay = Math.random() * 3 + 's';
-                starsContainer.appendChild(star);
-            }
-        }
-        createStars();
-
-        // 获取元素
-        const clickArea = document.getElementById('clickArea');
-        const countdownPanel = document.getElementById('countdownPanel');
-        const mainContainer = document.getElementById('mainContainer');
-        const finalGreeting = document.getElementById('finalGreeting');
-        const yearDisplay = document.getElementById('yearDisplay');
-        const canvas = document.getElementById('fireworksCanvas');
-        const ctx = canvas.getContext('2d');
-
-        // 设置画布
-        canvas.width = window.innerWidth;
-        canvas.height = window.innerHeight;
-        window.addEventListener('resize', () => {
-            canvas.width = window.innerWidth;
-            canvas.height = window.innerHeight;
-        });
-
-        // 春节日期数据（2025-2030）
-        const springFestivals = {
-            2025: new Date(2025, 0, 29),  // 2025年1月29日
-            2026: new Date(2026, 1, 17),  // 2026年2月17日
-            2027: new Date(2027, 1, 6),   // 2027年2月6日
-            2028: new Date(2028, 0, 26),  // 2028年1月26日
-            2029: new Date(2029, 1, 13),  // 2029年2月13日
-            2030: new Date(2030, 1, 3)    // 2030年2月3日
-        };
-
-        // 获取下一个春节
-        function getNextSpringFestival() {
-            const now = new Date();
-            const year = now.getFullYear();
-            let target = springFestivals[year];
-            
-            if (!target || now > target) {
-                target = springFestivals[year + 1];
-            }
-            return target;
-        }
-
-        // 倒计时逻辑
-        let countdownInterval;
-        let isNewYear = false;
-        let fireworksStarted = false;
-
-        function updateCountdown() {
-            const now = new Date();
-            const target = getNextSpringFestival();
-            const diff = target - now;
-
-            // 更新年份显示
-            yearDisplay.textContent = target.getFullYear();
-
-            if (diff <= 0 && !isNewYear) {
-                // 到达大年初一0点！
-                isNewYear = true;
-                clearInterval(countdownInterval);
-                startFireworksShow();
-                return;
-            }
-
-            const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-            const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-            const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-            const seconds = Math.floor((diff % (1000 * 60)) / 1000);
-
-            document.getElementById('days').textContent = String(days).padStart(2, '0');
-            document.getElementById('hours').textContent = String(hours).padStart(2, '0');
-            document.getElementById('minutes').textContent = String(minutes).padStart(2, '0');
-            document.getElementById('seconds').textContent = String(seconds).padStart(2, '0');
-        }
-
-        // 点击事件
-        clickArea.addEventListener('click', function(e) {
-            createParticles(e.clientX, e.clientY);
-            clickArea.style.display = 'none';
-            countdownPanel.classList.add('active');
-            updateCountdown();
-            countdownInterval = setInterval(updateCountdown, 1000);
-        });
-
-        // 粒子效果
-        function createParticles(x, y) {
-            const colors = ['#ffd700', '#ff6b6b', '#ff4757', '#ffa502', '#ff6348', '#fff'];
-            for (let i = 0; i < 40; i++) {
-                const particle = document.createElement('div');
-                particle.className = 'particle';
-                const size = Math.random() * 8 + 4;
-                particle.style.width = size + 'px';
-                particle.style.height = size + 'px';
-                particle.style.background = colors[Math.floor(Math.random() * colors.length)];
-                particle.style.left = x + 'px';
-                particle.style.top = y + 'px';
-                
-                const angle = Math.random() * Math.PI * 2;
-                const velocity = Math.random() * 150 + 50;
-                particle.style.setProperty('--tx', Math.cos(angle) * velocity + 'px');
-                particle.style.setProperty('--ty', Math.sin(angle) * velocity + 'px');
-                
-                document.body.appendChild(particle);
-                setTimeout(() => particle.remove(), 2000);
-            }
-        }
-
-        // 烟花系统
-        class Firework {
-            constructor(x, targetY) {
-                this.x = x || Math.random() * canvas.width;
-                this.y = canvas.height;
-                this.targetY = targetY || Math.random() * canvas.height * 0.4 + 100;
-                this.speed = Math.random() * 4 + 6;
-                this.angle = -Math.PI / 2 + (Math.random() - 0.5) * 0.3;
-                this.vx = Math.cos(this.angle) * this.speed;
-                this.vy = Math.sin(this.angle) * this.speed;
-                this.hue = Math.random() * 60 + 10; // 金色到红色
-                this.exploded = false;
-                this.particles = [];
-                this.trail = [];
-            }
-
-            update() {
-                if (!this.exploded) {
-                    // 保存轨迹
-                    this.trail.push({x: this.x, y: this.y, alpha: 1});
-                    if (this.trail.length > 10) this.trail.shift();
-                    
-                    this.x += this.vx;
-                    this.y += this.vy;
-                    this.vy += 0.15; // 重力
-
-                    if (this.y <= this.targetY || this.vy >= 0) {
-                        this.explode();
+        const sleep = (ms) => new Promise(r => setTimeout(r, ms));
+        
+        function scrollTo(id) {
+            const el = document.getElementById(id);
+            if (el) {
+                el.scrollIntoView({ behavior: 'smooth' });
+                const dots = document.querySelectorAll('.fixed.right-6 > div');
+                const sections = ['hero', 'binary', 'dp', 'prefix', 'math', 'graph', 'rain'];
+                const idx = sections.indexOf(id);
+                dots.forEach((dot, i) => {
+                    if (i === idx) {
+                        dot.classList.remove('bg-slate-600');
+                        dot.classList.add('bg-cyan-500');
+                    } else {
+                        dot.classList.remove('bg-cyan-500');
+                        dot.classList.add('bg-slate-600');
                     }
-                } else {
-                    this.particles.forEach((p, i) => {
-                        p.x += p.vx;
-                        p.y += p.vy;
-                        p.vy += 0.12;
-                        p.alpha -= 0.012;
-                        p.life -= 0.012;
-                        if (p.life <= 0) this.particles.splice(i, 1);
-                    });
-                }
-            }
-
-            explode() {
-                this.exploded = true;
-                const count = Math.random() * 40 + 60;
-                for (let i = 0; i < count; i++) {
-                    const angle = (Math.PI * 2 / count) * i + Math.random() * 0.5;
-                    const velocity = Math.random() * 5 + 2;
-                    this.particles.push({
-                        x: this.x,
-                        y: this.y,
-                        vx: Math.cos(angle) * velocity,
-                        vy: Math.sin(angle) * velocity,
-                        alpha: 1,
-                        life: 1,
-                        hue: this.hue + Math.random() * 40 - 20,
-                        size: Math.random() * 4 + 2,
-                        brightness: Math.random() * 20 + 60
-                    });
-                }
-            }
-
-            draw() {
-                if (!this.exploded) {
-                    // 绘制轨迹
-                    this.trail.forEach((t, i) => {
-                        ctx.beginPath();
-                        ctx.arc(t.x, t.y, 2, 0, Math.PI * 2);
-                        ctx.fillStyle = `hsla(${this.hue}, 100%, 70%, ${i / this.trail.length * 0.5})`;
-                        ctx.fill();
-                    });
-                    
-                    ctx.beginPath();
-                    ctx.arc(this.x, this.y, 4, 0, Math.PI * 2);
-                    ctx.fillStyle = `hsla(${this.hue}, 100%, 70%, 1)`;
-                    ctx.shadowBlur = 10;
-                    ctx.shadowColor = `hsla(${this.hue}, 100%, 70%, 1)`;
-                    ctx.fill();
-                    ctx.shadowBlur = 0;
-                } else {
-                    this.particles.forEach(p => {
-                        ctx.beginPath();
-                        ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
-                        ctx.fillStyle = `hsla(${p.hue}, 100%, ${p.brightness}%, ${p.alpha})`;
-                        ctx.shadowBlur = 15;
-                        ctx.shadowColor = `hsla(${p.hue}, 100%, 60%, ${p.alpha})`;
-                        ctx.fill();
-                    });
-                    ctx.shadowBlur = 0;
-                }
+                });
             }
         }
 
-        let fireworks = [];
-        let fireworkTimer = 0;
-        let animationId;
-        let showDuration = 8000; // 烟花持续8秒
+        function createMeteors() {
+            const container = document.getElementById('meteor-container');
+            for (let i = 0; i < 20; i++) {
+                const meteor = document.createElement('div');
+                meteor.className = 'meteor';
+                meteor.style.left = Math.random() * 100 + '%';
+                meteor.style.top = Math.random() * 50 + '%';
+                meteor.style.animationDelay = Math.random() * 5 + 's';
+                meteor.style.animationDuration = (2 + Math.random() * 2) + 's';
+                container.appendChild(meteor);
+            }
+        }
+        createMeteors();
 
-        function startFireworksShow() {
-            fireworksStarted = true;
+        // ==================== 1. 管道问题 ====================
+        function loadPipeExample() {
+            document.getElementById('pipe-n').value = '3';
+            document.getElementById('pipe-len').value = '10';
+            document.getElementById('pipe-data').value = '1 1\n5 5\n10 2';
+        }
+
+        async function runPipe() {
+            const n = parseInt(document.getElementById('pipe-n').value);
+            const len = parseInt(document.getElementById('pipe-len').value);
+            const lines = document.getElementById('pipe-data').value.trim().split('\n');
+            const valves = [];
             
-            // 立即发射多个烟花
-            for (let i = 0; i < 5; i++) {
-                setTimeout(() => {
-                    fireworks.push(new Firework());
-                }, i * 300);
-            }
-
-            // 持续发射
-            function launchLoop() {
-                if (!fireworksStarted) return;
-                fireworkTimer += 100;
-                if (fireworkTimer < showDuration && Math.random() > 0.3) {
-                    fireworks.push(new Firework());
+            for (let line of lines) {
+                const parts = line.trim().split(/\s+/);
+                if (parts.length >= 2) {
+                    const l = parseInt(parts[0]);
+                    const s = parseInt(parts[1]);
+                    valves.push([l, s]);
                 }
-                
-                if (fireworkTimer < showDuration) {
-                    setTimeout(launchLoop, Math.random() * 400 + 200);
+            }
+            
+            let left = 0, right = 1e9, ans = 0;
+            
+            while (left <= right) {
+                const mid = Math.floor((left + right) / 2);
+                if (checkPipe(mid, valves, len)) {
+                    ans = mid;
+                    right = mid - 1;
                 } else {
-                    // 烟花结束，显示祝福语
-                    setTimeout(showFinalGreeting, 1500);
+                    left = mid + 1;
                 }
             }
-            launchLoop();
-            animate();
-        }
-
-        function animate() {
-            ctx.fillStyle = 'rgba(15, 12, 41, 0.15)';
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-            fireworks = fireworks.filter(fw => {
-                fw.update();
-                fw.draw();
-                return !fw.exploded || fw.particles.length > 0;
+            
+            const ansEl = document.getElementById('pipe-ans');
+            ansEl.textContent = ans;
+            ansEl.classList.remove('opacity-0');
+            
+            document.getElementById('pipe-viz').classList.remove('hidden');
+            document.getElementById('pipe-len-display').textContent = len;
+            
+            const vizContainer = document.getElementById('pipe-valves');
+            vizContainer.innerHTML = '';
+            valves.forEach(([l, s], i) => {
+                const leftPos = (Math.max(0, l - s * ans) / len) * 100;
+                const rightPos = (Math.min(len, l + s * ans) / len) * 100;
+                const width = rightPos - leftPos;
+                
+                const div = document.createElement('div');
+                div.className = 'absolute h-8 rounded bg-blue-500/30 border border-blue-400/50';
+                div.style.left = leftPos + '%';
+                div.style.width = width + '%';
+                div.style.top = (i * 10 + 20) + '%';
+                div.title = `阀门${i+1}: [${l-s*ans}, ${l+s*ans}]`;
+                vizContainer.appendChild(div);
             });
-
-            if (fireworks.length > 0 || fireworksStarted) {
-                animationId = requestAnimationFrame(animate);
-            }
-        }
-
-        function showFinalGreeting() {
-            // 淡出主容器
-            mainContainer.style.transition = 'opacity 1s ease';
-            mainContainer.style.opacity = '0';
-            
-            setTimeout(() => {
-                mainContainer.style.display = 'none';
-                finalGreeting.classList.add('show');
-                
-                // 创建庆祝粒子
-                createCelebrationParticles();
-            }, 1000);
-        }
-
-        function createCelebrationParticles() {
-            const colors = ['#ffd700', '#ff6b6b', '#ff4757', '#ffa502'];
-            setInterval(() => {
-                if (document.hidden) return;
-                const x = Math.random() * window.innerWidth;
-                const y = window.innerHeight + 20;
-                const particle = document.createElement('div');
-                particle.style.position = 'fixed';
-                particle.style.left = x + 'px';
-                particle.style.top = y + 'px';
-                particle.style.width = '10px';
-                particle.style.height = '10px';
-                particle.style.background = colors[Math.floor(Math.random() * colors.length)];
-                particle.style.borderRadius = '50%';
-                particle.style.pointerEvents = 'none';
-                particle.style.zIndex = '200';
-                particle.style.animation = 'particleFloat 3s ease-out forwards';
-                particle.style.setProperty('--tx', (Math.random() - 0.5) * 200 + 'px');
-                particle.style.setProperty('--ty', -window.innerHeight - 100 + 'px');
-                document.body.appendChild(particle);
-                setTimeout(() => particle.remove(), 3000);
-            }, 300);
-        }
-
-        // 检查是否已经是春节
-        function checkCurrentTime() {
-            const now = new Date();
-            const target = getNextSpringFestival();
-            const diff = target - now;
-            
-            // 如果在春节当天（24小时内），自动开始
-            if (diff <= 0 && diff > -24 * 60 * 60 * 1000) {
-                clickArea.style.display = 'none';
-                countdownPanel.classList.add('active');
-                document.getElementById('days').textContent = '00';
-                document.getElementById('hours').textContent = '00';
-                document.getElementById('minutes').textContent = '00';
-                document.getElementById('seconds').textContent = '00';
-                setTimeout(startFireworksShow, 1000);
-            }
         }
         
-        checkCurrentTime();
+        function checkPipe(time, valves, len) {
+            const res = [];
+            for (let [l, s] of valves) {
+                const temp = time - s;
+                if (temp >= 0) res.push([l - temp, l + temp]);
+            }
+            if (res.length === 0) return false;
+            res.sort((a, b) => a[0] - b[0]);
+            let ans = res[0][1];
+            for (let i = 1; i < res.length; i++) {
+                if (res[i][0] - ans <= 1) ans = Math.max(ans, res[i][1]);
+                else break;
+            }
+            return ans >= len;
+        }
+
+        // ==================== 2. 动态规划 ====================
+        let dpRunning = false;
+        
+        async function runDP() {
+            if (dpRunning) return;
+            dpRunning = true;
+            
+            const a = document.getElementById('dp-a').value.split(',').map(Number);
+            const b = document.getElementById('dp-b').value.split(',').map(Number);
+            const container = document.getElementById('dp-table');
+            const status = document.getElementById('dp-status');
+            
+            let html = '<div class="inline-block">';
+            html += '<div class="flex"><div class="w-12"></div><div class="w-12 text-center text-xs text-slate-500">∅</div>';
+            b.forEach(v => html += `<div class="w-12 text-center text-cyan-400 font-bold">${v}</div>`);
+            html += '</div>';
+            
+            const dp = Array(a.length + 1).fill(null).map(() => Array(b.length + 1).fill(0));
+            
+            for (let i = 0; i <= a.length; i++) {
+                html += '<div class="flex">';
+                html += `<div class="w-12 flex items-center justify-center ${i===0?'text-slate-500':'text-cyan-400 font-bold'}">${i===0?'∅':a[i-1]}</div>`;
+                for (let j = 0; j <= b.length; j++) {
+                    html += `<div class="dp-cell w-12 h-12 flex items-center justify-center border border-slate-700 rounded m-0.5 text-lg mono font-bold bg-slate-800 text-slate-500" id="dp-${i}-${j}">0</div>`;
+                }
+                html += '</div>';
+            }
+            html += '</div>';
+            container.innerHTML = html;
+            
+            for (let i = 1; i <= a.length; i++) {
+                for (let j = 1; j <= b.length; j++) {
+                    const cell = document.getElementById(`dp-${i}-${j}`);
+                    cell.classList.add('calculating');
+                    
+                    if (a[i-1] === b[j-1]) {
+                        dp[i][j] = dp[i-1][j-1] + 1;
+                        cell.classList.remove('bg-slate-800', 'text-slate-500');
+                        cell.classList.add('bg-green-500/20', 'text-green-400');
+                        status.innerHTML = `匹配! a[${i-1}]=${a[i-1]} == b[${j-1}]=${b[j-1]}<br>dp[${i}][${j}] = dp[${i-1}][${j-1}] + 1 = ${dp[i][j]}`;
+                    } else {
+                        dp[i][j] = Math.max(dp[i-1][j], dp[i][j-1]);
+                        cell.classList.remove('bg-slate-800', 'text-slate-500');
+                        cell.classList.add('bg-purple-500/10', 'text-purple-400');
+                        status.innerHTML = `不匹配: max(dp[${i-1}][${j}], dp[${i}][${j-1}]) = ${dp[i][j]}`;
+                    }
+                    
+                    cell.textContent = dp[i][j];
+                    await sleep(400);
+                    cell.classList.remove('calculating');
+                }
+            }
+            
+            status.innerHTML = `计算完成! LCS长度 = <span class="text-2xl font-bold text-green-400">${dp[a.length][b.length]}</span>`;
+            dpRunning = false;
+        }
+        
+        function resetDP() {
+            dpRunning = false;
+            document.getElementById('dp-table').innerHTML = '';
+            document.getElementById('dp-status').innerHTML = '';
+        }
+
+        // ==================== 3. 预处理前缀和 ====================
+        let prefixData = [5, 3, 4, 6, 5];
+        let prefixSums = [5, 8, 12, 18, 23];
+        
+        function updatePrefixData() {
+            const input = document.getElementById('prefix-input').value;
+            prefixData = input.split(',').map(x => parseInt(x.trim())).filter(x => !isNaN(x));
+            // 修改：s[i] = sum(a[0..i])
+            prefixSums = [];
+            let sum = 0;
+            for (let i = 0; i < prefixData.length; i++) {
+                sum += prefixData[i];
+                prefixSums.push(sum);
+            }
+            renderPrefix();
+        }
+        
+        function renderPrefix() {
+            const orig = document.getElementById('prefix-orig');
+            const sum = document.getElementById('prefix-sum');
+            const maxV = Math.max(...prefixData, 1);
+            
+            orig.innerHTML = '';
+            sum.innerHTML = '';
+            
+            prefixData.forEach((v, i) => {
+                const h = Math.max((v/maxV)*80, 20);
+                orig.innerHTML += `
+                    <div class="flex flex-col items-center">
+                        <div class="w-14 bg-slate-600 rounded-t flex items-end justify-center text-sm font-bold text-white" style="height: ${h}px">${v}</div>
+                        <div class="text-[10px] text-slate-500 mt-1 mono">a[${i}]</div>
+                    </div>
+                `;
+            });
+            
+            const maxS = Math.max(...prefixSums, 1);
+            prefixSums.forEach((v, i) => {
+                const h = Math.max((v/maxS)*100, 24);
+                sum.innerHTML += `
+                    <div class="flex flex-col items-center">
+                        <div class="w-14 bg-emerald-600/80 rounded-t border border-emerald-500/30 flex items-end justify-center text-sm font-bold text-white" style="height: ${h}px" id="pre-s-${i}">${v}</div>
+                        <div class="text-[10px] text-emerald-400 mt-1 mono font-bold">s[${i}]</div>
+                    </div>
+                `;
+            });
+        }
+        
+        function validatePrefix() {
+            const l = parseInt(document.getElementById('pre-l').value);
+            const r = parseInt(document.getElementById('pre-r').value);
+            if (l > r) document.getElementById('pre-r').value = l;
+        }
+        
+        function calcPrefix() {
+            const l = parseInt(document.getElementById('pre-l').value);
+            const r = parseInt(document.getElementById('pre-r').value);
+            
+            // 重置高亮
+            document.querySelectorAll('[id^="pre-s-"]').forEach(el => {
+                el.classList.remove('bg-amber-500', 'bg-pink-500', 'ring-2', 'ring-amber-400', 'ring-pink-400');
+                el.classList.add('bg-emerald-600/80');
+            });
+            
+            let result;
+            const formulaDetail = document.getElementById('formula-detail');
+            
+            if (l === 0) {
+                // l=0 时，sum[0,r] = s[r]
+                result = prefixSums[r];
+                
+                // 高亮 s[r]
+                const sR = document.getElementById(`pre-s-${r}`);
+                if (sR) {
+                    sR.classList.remove('bg-emerald-600/80');
+                    sR.classList.add('bg-amber-500', 'ring-2', 'ring-amber-400');
+                }
+                
+                // 显示公式：sum[0,r] = s[r]
+                formulaDetail.innerHTML = `<span class="text-amber-400">s[<span id="disp-sr">${r}</span>]</span>`;
+                
+                document.getElementById('prefix-calc-box').style.opacity = '1';
+                document.getElementById('disp-l').textContent = l;
+                document.getElementById('disp-r').textContent = r;
+                document.getElementById('pre-detail').innerHTML = 
+                    `${prefixData.slice(0, r+1).join('+')} = ${result}<br><span class="text-slate-600">实际计算: s[${r}] = ${prefixSums[r]}</span>`;
+                document.getElementById('pre-ans').textContent = result;
+            } else {
+                // l>0 时，sum[l,r] = s[r] - s[l-1]
+                result = prefixSums[r] - prefixSums[l-1];
+                
+                // 高亮 s[r] 和 s[l-1]
+                const sR = document.getElementById(`pre-s-${r}`);
+                const sL = document.getElementById(`pre-s-${l-1}`);
+                if (sR) {
+                    sR.classList.remove('bg-emerald-600/80');
+                    sR.classList.add('bg-amber-500', 'ring-2', 'ring-amber-400');
+                }
+                if (sL) {
+                    sL.classList.remove('bg-emerald-600/80');
+                    sL.classList.add('bg-pink-500', 'ring-2', 'ring-pink-400');
+                }
+                
+                // 显示公式：sum[l,r] = s[r] - s[l-1]
+                formulaDetail.innerHTML = `
+                    <span class="text-amber-400">s[<span id="disp-sr">${r}</span>]</span>
+                    <span>-</span>
+                    <span class="text-pink-400">s[<span id="disp-sl">${l-1}</span>]</span>
+                `;
+                
+                document.getElementById('prefix-calc-box').style.opacity = '1';
+                document.getElementById('disp-l').textContent = l;
+                document.getElementById('disp-r').textContent = r;
+                document.getElementById('pre-detail').innerHTML = 
+                    `${prefixData.slice(l, r+1).join('+')} = ${result}<br><span class="text-slate-600">实际计算: s[${r}]-s[${l-1}] = ${prefixSums[r]}-${prefixSums[l-1]}</span>`;
+                document.getElementById('pre-ans').textContent = result;
+            }
+        }
+
+        // ==================== 4. 数论 ====================
+        function modPow(a, n, m) {
+            let res = 1; a %= m;
+            while (n > 0) { if (n & 1) res = (res * a) % m; a = (a * a) % m; n >>= 1; }
+            return res;
+        }
+        function runPower() {
+            const a = parseInt(document.getElementById('pow-a').value);
+            const n = parseInt(document.getElementById('pow-n').value);
+            document.getElementById('pow-res').textContent = Math.pow(a, n);
+        }
+        function runInverse() {
+            const a = parseInt(document.getElementById('inv-a').value);
+            const m = parseInt(document.getElementById('inv-m').value);
+            document.getElementById('inv-res').textContent = modPow(a, m-2, m);
+        }
+        function runEuler() {
+            let n = parseInt(document.getElementById('euler-n').value), result = n, x = n;
+            for (let i = 2; i * i <= x; i++) {
+                if (x % i === 0) { result = result / i * (i - 1); while (x % i === 0) x /= i; }
+            }
+            if (x > 1) result = result / x * (x - 1);
+            document.getElementById('euler-res').textContent = result;
+        }
+        function gcd(a, b) { return b === 0 ? a : gcd(b, a % b); }
+        function runGCD() {
+            const a = parseInt(document.getElementById('gcd-a').value);
+            const b = parseInt(document.getElementById('gcd-b').value);
+            document.getElementById('gcd-res').textContent = gcd(a, b);
+        }
+
+        // ==================== 5. 图论 ====================
+        let gNodes = [], gEdges = [], gDegrees = [], gState = [];
+        function initGraph() {
+            const canvas = document.getElementById('graphCanvas');
+            const ctx = canvas.getContext('2d');
+            canvas.width = canvas.offsetWidth; canvas.height = canvas.offsetHeight;
+            const n = parseInt(document.getElementById('graph-n').value);
+            const lines = document.getElementById('graph-edges').value.trim().split('\n');
+            gEdges = []; gDegrees = new Array(n).fill(0);
+            for (let line of lines) {
+                const [u, v] = line.trim().split(/\s+/).map(x => parseInt(x) - 1);
+                gEdges.push([u, v]); gDegrees[u]++; gDegrees[v]++;
+            }
+            gNodes = []; const cx = canvas.width / 2, cy = canvas.height / 2, r = Math.min(cx, cy) - 60;
+            for (let i = 0; i < n; i++) {
+                const angle = (2 * Math.PI * i) / n - Math.PI / 2;
+                gNodes.push({x: cx + r * Math.cos(angle), y: cy + r * Math.sin(angle), id: i + 1});
+            }
+            gState = new Array(n).fill('normal'); drawGraph();
+        }
+        function drawGraph() {
+            const canvas = document.getElementById('graphCanvas'), ctx = canvas.getContext('2d');
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.strokeStyle = 'rgba(148, 163, 184, 0.3)'; ctx.lineWidth = 2;
+            gEdges.forEach(e => { ctx.beginPath(); ctx.moveTo(gNodes[e[0]].x, gNodes[e[0]].y); ctx.lineTo(gNodes[e[1]].x, gNodes[e[1]].y); ctx.stroke(); });
+            gNodes.forEach((n, i) => {
+                ctx.beginPath(); ctx.arc(n.x, n.y, 22, 0, Math.PI * 2);
+                if (gState[i] === 'cycle') { ctx.fillStyle = '#ef4444'; ctx.shadowBlur = 15; ctx.shadowColor = '#ef4444'; }
+                else if (gState[i] === 'peeled') { ctx.fillStyle = '#22c55e'; ctx.shadowBlur = 0; }
+                else { ctx.fillStyle = '#6366f1'; ctx.shadowBlur = 0; }
+                ctx.fill(); ctx.shadowBlur = 0;
+                ctx.fillStyle = 'white'; ctx.font = 'bold 13px monospace'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(n.id, n.x, n.y);
+            });
+        }
+        async function runGraph() {
+            initGraph(); await sleep(500);
+            const n = gNodes.length, q = [], onCycle = new Array(n).fill(true);
+            for (let i = 0; i < n; i++) if (gDegrees[i] === 1) { q.push(i); onCycle[i] = false; }
+            let head = 0;
+            while (head < q.length) {
+                const u = q[head++]; gState[u] = 'peeled'; drawGraph(); await sleep(600);
+                for (let [a, b] of gEdges) {
+                    let v = -1; if (a === u) v = b; else if (b === u) v = a;
+                    if (v !== -1 && onCycle[v]) { gDegrees[v]--; if (gDegrees[v] === 1) { q.push(v); onCycle[v] = false; } }
+                }
+            }
+            for (let i = 0; i < n; i++) if (onCycle[i]) gState[i] = 'cycle';
+            drawGraph();
+        }
+        function resetGraph() { initGraph(); }
+
+        // ==================== 6. 双指针接雨水问题 - 已删除左右最大值 ====================
+        let rainHeights = [0, 1, 0, 2, 1, 0, 1, 3, 2, 1, 2, 1];
+        let rainRunning = false;
+        
+        function updateRainData() {
+            const input = document.getElementById('rain-input').value;
+            rainHeights = input.split(',').map(x => parseInt(x.trim())).filter(x => !isNaN(x));
+            initRain();
+        }
+        
+        function initRain() {
+            const container = document.getElementById('rain-viz');
+            const labelsContainer = document.getElementById('rain-labels');
+            container.innerHTML = '';
+            labelsContainer.innerHTML = '';
+            
+            const maxH = Math.max(...rainHeights, 1);
+            const scale = 250 / maxH;
+            
+            // 创建柱子和标签
+            rainHeights.forEach((h, i) => {
+                const col = document.createElement('div');
+                col.className = 'rain-col';
+                col.style.height = '100%';
+                col.dataset.index = i;
+                
+                const barHeight = Math.max(h * scale, h === 0 ? 2 : 15);
+                
+                const water = document.createElement('div');
+                water.className = 'rain-water';
+                water.id = `water-${i}`;
+                water.style.height = '0px';
+                water.style.bottom = `${barHeight}px`;
+                
+                const bar = document.createElement('div');
+                bar.className = 'rain-bar';
+                bar.id = `bar-${i}`;
+                bar.style.height = `${barHeight}px`;
+                bar.textContent = h;
+                
+                if (h === 0) bar.style.opacity = '0.3';
+                
+                col.appendChild(water);
+                col.appendChild(bar);
+                container.appendChild(col);
+                
+                const label = document.createElement('div');
+                label.className = 'w-[36px] text-center text-xs text-slate-500 mono';
+                label.textContent = i;
+                label.style.flexShrink = '0';
+                labelsContainer.appendChild(label);
+            });
+            
+            labelsContainer.style.gap = '8px';
+            
+            // 初始化指针和统计
+            updateRainPtr(0, rainHeights.length - 1);
+            // 只更新总积水量
+            document.getElementById('rain-total').textContent = '0';
+        }
+        
+        // 更新指针位置
+        function updateRainPtr(l, r) {
+            const barL = document.getElementById(`bar-${l}`);
+            const barR = document.getElementById(`bar-${r}`);
+            const container = document.getElementById('rain-viz');
+            
+            if (!barL || !barR || !container) return;
+            
+            const containerRect = container.getBoundingClientRect();
+            const barLRect = barL.getBoundingClientRect();
+            const barRRect = barR.getBoundingClientRect();
+            
+            const ptrContainer = document.getElementById('pointer-container');
+            const ptrContainerRect = ptrContainer.getBoundingClientRect();
+            
+            const lPos = barLRect.left + barLRect.width / 2 - ptrContainerRect.left;
+            const rPos = barRRect.left + barRRect.width / 2 - ptrContainerRect.left;
+            
+            const ptrL = document.getElementById('ptr-l');
+            const ptrR = document.getElementById('ptr-r');
+            
+            ptrL.style.left = `${lPos}px`;
+            ptrR.style.left = `${rPos}px`;
+            
+            // 高亮柱子
+            rainHeights.forEach((_, i) => {
+                const bar = document.getElementById(`bar-${i}`);
+                if (!bar) return;
+                if (i === l) {
+                    bar.style.background = 'linear-gradient(to top, #fbbf24, #f59e0b)';
+                    bar.style.boxShadow = '0 0 20px #fbbf24';
+                } else if (i === r) {
+                    bar.style.background = 'linear-gradient(to top, #f472b6, #ec4899)';
+                    bar.style.boxShadow = '0 0 20px #f472b6';
+                } else {
+                    bar.style.background = 'linear-gradient(to top, #475569, #64748b)';
+                    bar.style.boxShadow = '0 -2px 8px rgba(0,0,0,0.3)';
+                }
+            });
+        }
+        
+        async function runRain() {
+            if (rainRunning) return;
+            rainRunning = true;
+            
+            const btn = document.getElementById('rain-btn');
+            btn.disabled = true; 
+            btn.textContent = '运行中...';
+            
+            initRain();
+            await sleep(600);
+            
+            let l = 0, r = rainHeights.length - 1;
+            let lmax = 0, rmax = 0, res = 0;
+            const maxH = Math.max(...rainHeights);
+            const scale = 250 / maxH;
+            
+            while (l < r) {
+                updateRainPtr(l, r);
+                
+                document.querySelectorAll('#rain .code-line').forEach(c => c.classList.remove('active'));
+                document.getElementById('rc1').classList.add('active');
+                document.getElementById('rc2').classList.add('active');
+                await sleep(800);
+                
+                if (rainHeights[l] < rainHeights[r]) {
+                    document.getElementById('rc3').classList.add('active');
+                    await sleep(400);
+                    
+                    if (rainHeights[l] >= lmax) {
+                        document.getElementById('rc4').classList.add('active');
+                        lmax = rainHeights[l];
+                    } else {
+                        document.getElementById('rc5').classList.add('active');
+                        document.getElementById('rc6').classList.add('active');
+                        
+                        const water = lmax - rainHeights[l];
+                        res += water;
+                        
+                        const waterEl = document.getElementById(`water-${l}`);
+                        const barHeight = Math.max(rainHeights[l] * scale, rainHeights[l] === 0 ? 2 : 15);
+                        const waterHeight = water * scale;
+                        
+                        waterEl.style.bottom = `${barHeight}px`;
+                        waterEl.style.height = `${Math.max(waterHeight, 2)}px`;
+                        
+                        // 只更新总积水量
+                        document.getElementById('rain-total').textContent = res;
+                    }
+                    await sleep(300);
+                    document.getElementById('rc7').classList.add('active');
+                    l++;
+                } else {
+                    document.getElementById('rc8').classList.add('active');
+                    
+                    if (rainHeights[r] >= rmax) {
+                        rmax = rainHeights[r];
+                    } else {
+                        const water = rmax - rainHeights[r];
+                        res += water;
+                        
+                        const waterEl = document.getElementById(`water-${r}`);
+                        const barHeight = Math.max(rainHeights[r] * scale, rainHeights[r] === 0 ? 2 : 15);
+                        const waterHeight = water * scale;
+                        
+                        waterEl.style.bottom = `${barHeight}px`;
+                        waterEl.style.height = `${Math.max(waterHeight, 2)}px`;
+                        
+                        // 只更新总积水量
+                        document.getElementById('rain-total').textContent = res;
+                    }
+                    r--;
+                }
+                await sleep(500);
+            }
+            
+            // 最终更新
+            document.getElementById('rain-total').textContent = res;
+            btn.disabled = false; 
+            btn.textContent = '重新模拟'; 
+            rainRunning = false;
+        }
+
+        // 初始化
+        window.onload = () => {
+            renderPrefix();
+            initRain();
+            initGraph();
+        };
+        window.onresize = () => {
+            initGraph();
+            if (!rainRunning && rainHeights.length > 0) {
+                initRain();
+            }
+        };
     </script>
 </body>
 </html>
